@@ -4,6 +4,8 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/labstack/echo"
+
 	"golang.org/x/net/webdav"
 )
 
@@ -12,6 +14,7 @@ const (
 )
 
 func main() {
+	e := echo.New()
 
 	srv := &webdav.Handler{
 		FileSystem: webdav.Dir(targetDir),
@@ -20,9 +23,13 @@ func main() {
 			log.Printf("WEBDAV: %#s, ERROR: %v", r, err)
 		},
 	}
-	http.Handle("/", srv)
-	if err := http.ListenAndServe(":8080", nil); err != nil {
-		log.Fatalf("Error with WebDAV server: %v", err)
-	}
+	e.GET("/webdav", echo.WrapHandler(srv))
+	e.Static("/", "superlight")
+	e.POST("/save", func(c echo.Context) error {
+		log.Println(c.FormParams())
+		return nil
+	})
+
+	e.Logger.Fatal(e.Start(":8080"))
 
 }
